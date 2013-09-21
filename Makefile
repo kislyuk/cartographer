@@ -22,4 +22,8 @@ clean:
 test:
 	./run_tests.sh
 
-.PHONY: setup_virtualenv clean test npm coffee
+get_data:
+	wget -P data 'http://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2'
+	wget -P data 'http://dumps.wikimedia.org/enwiki/latest/enwiki-latest-abstract.xml'
+
+.PHONY: setup_virtualenv clean test npm coffee get_data
