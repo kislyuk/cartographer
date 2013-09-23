@@ -9,3 +9,4 @@ from mongoengine import *
 class POI(Document):
     name = StringField(required=True)
     at = PointField(required=True)
+    abstract = BinaryField(required=True)
