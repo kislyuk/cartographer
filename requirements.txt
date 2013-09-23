@@ -5,3 +5,4 @@ virtualenv==1.6.4
 futures==2.1.2
 pymongo==2.6.2
 mongoengine==0.8.4
+git+git://github.com/tr11/python-lz4@0ed3749ad10d2bb326b203643371355662ba253e
