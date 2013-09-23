@@ -5,6 +5,7 @@
 
     <script src="http://code.jquery.com/jquery-1.10.1.js"></script>
     <script src="http://underscorejs.org/underscore-min.js"></script>
+    <script src="/static/lib/mousetrap.min.js"></script>
 
     <style type="text/css">
       html { height: 100% }
@@ -28,7 +29,10 @@
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD089xhNV3EkR5nv-GXTN0Mug87RWpe_iA&sensor=true">
     </script>
     <script type="text/javascript">
-        google.maps.visualRefresh = true;
+      google.maps.visualRefresh = true;
+      var activeWindow = null;
+      var cartographerOpen = true;
+      var markers = {};
 
       function initialize() {
         var mapOptions = {
@@ -41,11 +45,31 @@
 
         var marker_image = 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Wikipedia%27s_W.svg/17px-Wikipedia%27s_W.svg.png';
 
-        function bounds_changed() {
-          console.log("Bounds changed to: ");
-          var mapNE = map.getBounds().getNorthEast();
-          var mapSW = map.getBounds().getSouthWest();
+        function updateMarkers() {
+          var bounds = map.getBounds();
+          var mapNE = bounds.getNorthEast();
+          var mapSW = bounds.getSouthWest();
 
+          var seenTitles = [];
+//          _.each(_.keys(markers), function(marker) {
+          _.each(markers, function(marker, name) {
+            if (bounds.contains(marker.getPosition())) {
+              seenTitles.push(name);
+            } else {
+              marker.setMap(null);
+              //markers[marker].setMap(null);
+              delete markers[marker];
+              console.log("Deleted "+marker);
+            }
+          });
+//          console.log("Seen "+seenTitles.length+" titles:");
+//          console.dir(seenTitles);
+//                       function check_is_in_or_out(marker){
+//   return map.getBounds().contains(marker.getPosition());
+// }
+
+
+          console.log("Bounds changed to: ");
           console.dir(mapNE.lat());
           console.dir(mapNE.lng());
           console.dir(mapSW.lat());
@@ -54,6 +78,7 @@
           function plotMarkers(data) {
             _.each(data.points, function(point) {
               var myLatLng = new google.maps.LatLng(point.lat, point.lng);
+
               var marker = new google.maps.Marker({position: myLatLng,
                                                    map: map,
                                                    icon: marker_image,
@@ -62,9 +87,16 @@
                 content: '<a href="https://en.wikipedia.org/wiki/' + point.name + '"><h1>' + point.name + '</h1></a><p>' +point.abstract + '</p>'
               });
               google.maps.event.addListener(marker, 'click', function() {
+                if (activeWindow) {
+                  activeWindow.close();
+                }
+
                 infowindow.open(map, marker);
+                activeWindow = infowindow;
               });
-              console.dir(point);
+//              markers.push(marker);
+              markers[point.name] = marker;
+//              console.dir(point);
             });
 //            console.dir(data)
           }
@@ -72,11 +104,29 @@
           $.ajax('/getPoints',
                  {type: 'POST',
                   contentType : 'application/json',
-                  data : JSON.stringify({NE: [mapNE.lng(), mapNE.lat()], SW: [mapSW.lng(), mapSW.lat()]}),
+                  data : JSON.stringify({NE: [mapNE.lng(), mapNE.lat()],
+                                         SW: [mapSW.lng(), mapSW.lat()],
+                                         seen: seenTitles}),
                   success: plotMarkers});
         }
 
-        google.maps.event.addListener(map, 'bounds_changed', bounds_changed);
+        Mousetrap.bind('esc', function() {
+          console.log("Escape!");
+          if (activeWindow) {
+            activeWindow.close();
+            activeWindow = null;
+          }
+        });
+        Mousetrap.bind(['`', '~'], function() {
+          if (cartographerOpen) {
+            $('#cartographer-root').slideUp(150);
+            cartographerOpen = false;
+          } else {
+            $('#cartographer-root').slideDown(150);
+            cartographerOpen = true;
+          }
+        });
+        google.maps.event.addListener(map, 'idle', updateMarkers);
       }
       google.maps.event.addDomListener(window, 'load', initialize);
 
@@ -89,7 +139,7 @@
       </div>
 
       <div id="cartographer-root">
-        Cartographer - Map together
+        Cartographer - Social Mapping
       </div>
     </div>
   </body>

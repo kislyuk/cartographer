@@ -35,14 +35,26 @@ def create_cartographer(args):
 
     @app.route("/getPoints", methods=['POST'])
     def getPoints():
-        print(request.json)
+#        print(request.json)
+        seen = request.json['seen']
+
+#        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']),
+#                             name__nin=request.json['seen'])
 
         points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']))
+        new_points = []
+        for point in points:
+            if point.name in seen:
+                continue
+            new_points.append(point)
+            if len(new_points) == 100:
+                break
+
         return jsonify({"points": [{"name": p.name,
                                     "lat": p.at['coordinates'][1],
                                     "lng": p.at['coordinates'][0],
                                     "abstract": lz4.decompress(p.abstract).decode() if p.abstract else ''
-                                    } for p in points]})
+                                    } for p in new_points]})
 
     return app
 
