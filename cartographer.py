@@ -16,15 +16,6 @@ from mongoengine import *
 
 connect('carta')
 
-#POI(name='w00tz', at=[150.0, -34.0]).save()
-#POI(name='si02', at=[151.0, -34.0]).save()
-#POI(name="Her Majesty's Ass", at=[0.0, 0.0]).save()
-
-#for p in POI.objects(at__geo_within_box=((149.0, -34.0), (152.0, -34.0))):
-#    print(p.to_json())
-# for p in POI.objects(at__geo_within_box=((147.32612890625, -35.31204838938832), (153.96187109375, -33.471836015830874))):
-#     print("w00tw00t"+p.name)
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Cartographer")
     parser.add_argument("--port", help="TCP port to listen on", type=int, default=9090)
@@ -47,9 +38,6 @@ def create_cartographer(args):
         print(request.json)
 
         points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']))
-        for p in points:
-            print(p.name, p.at)
-        print(p.at['coordinates'])
         return jsonify({"points": [{"name": p.name,
                                     "lat": p.at['coordinates'][1],
                                     "lng": p.at['coordinates'][0],
