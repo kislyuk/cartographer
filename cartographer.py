@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+'''
+identify important articles by article length - need compound index
+search box
+aggregate multiple icons into one that pops up a list
+    ag clustering
+    with a (+) button to zoom in to that cluster?
+links to geo sightseeing blogs/aggregator/backref layer scrape
+disqus or lighter on all abstracts; preserve links on all abstracts
+panoramio layer
+check wp for color conventions/add colors
+scrape international wikipedias and add in-place translate
+
+'''
+
 import os, sys, logging, urllib, time, string, json, argparse, collections, datetime, re
 from functools import wraps
 
@@ -35,16 +49,17 @@ def create_cartographer(args):
 
     @app.route("/getPoints", methods=['POST'])
     def getPoints():
-#        print(request.json)
-        seen = request.json['seen']
 
 #        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']),
 #                             name__nin=request.json['seen'])
 
-        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']))
+        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']))[:100]
+        seen = request.json['seen']
         new_points = []
+        discarded = 0
         for point in points:
             if point.name in seen:
+                discarded += 1
                 continue
             new_points.append(point)
             if len(new_points) == 100:
@@ -53,7 +68,8 @@ def create_cartographer(args):
         return jsonify({"points": [{"name": p.name,
                                     "lat": p.at['coordinates'][1],
                                     "lng": p.at['coordinates'][0],
-                                    "abstract": lz4.decompress(p.abstract).decode() if p.abstract else ''
+                                    "abstract": lz4.decompress(p.abstract).decode() if p.abstract else '',
+                                    "img": p.img,
                                     } for p in new_points]})
 
     return app

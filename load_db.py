@@ -77,8 +77,8 @@ def extract_abstract(text):
             elif template_depth == 0:
                 abstract += chunk
         abstract = re.sub(r"'''(.+?)'''", r"\1", abstract)
-        abstract = re.sub(r"\[\[([^\|]+?)\]\]", r'<a href="//en.wikipedia.org/wiki/\1">\1</a>', abstract)
-        abstract = re.sub(r"\[\[(.+?)\|(.+?)\]\]", r'<a href="//en.wikipedia.org/wiki/\1">\2</a>', abstract)
+        abstract = re.sub(r"\[\[([^\|]+?)\]\]", r'<a href="//en.wikipedia.org/wiki/\1" target=_blank>\1</a>', abstract)
+        abstract = re.sub(r"\[\[(.+?)\|(.+?)\]\]", r'<a href="//en.wikipedia.org/wiki/\1" target=_blank>\2</a>', abstract)
         abstract = abstract.strip()
         if re.match('^\s*$', abstract):
             continue
@@ -109,7 +109,6 @@ with bz2.BZ2File(input_filename) as bz2_fh:
                 abstract, img = extract_abstract(text) or ''
                 #print("\t".join(map(str, (title, lat, lng))))
                 print(title)
-                print(abstract)
                 try:
                     POI(name=title, at=[lng, lat], abstract=lz4.compress(abstract), alen=len(text), img=img).save()
                     #POI(name=title, at=[lng, lat], abstract=abstract).save()

@@ -4,6 +4,8 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 
     <script src="http://code.jquery.com/jquery-1.10.1.js"></script>
+    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
     <script src="http://underscorejs.org/underscore-min.js"></script>
     <script src="/static/lib/mousetrap.min.js"></script>
 
@@ -21,15 +23,37 @@
         border-top: none;
         border-bottom-right-radius: 5px;
         border-bottom-left-radius: 5px;
-        padding: 8px;
+        padding: 8px; padding-left: 0px; padding-right: 0px;
         font-family: sans-serif;
+      }
+      #cartographer {
+        padding: 0px;
+      }
+      #drawer-handle {
+        position: relative;
+        top: 92%; left: 0;
+        width: 100%; height: 10%;
+        line-height:10px;
+        border: none;
+        border-top: 1px solid gray;
+        padding: 0; margin-top: -10px;
+        text-align: center;
+      }
+      #drawer-handle-text {
+        display: inline-block;
+        vertical-align: middle;
+        cursor: pointer;
+      }
+      #infothumb {
+        display: block;
+        float: right;
+
       }
     </style>
     <script type="text/javascript"
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD089xhNV3EkR5nv-GXTN0Mug87RWpe_iA&sensor=true">
     </script>
     <script type="text/javascript">
-      google.maps.visualRefresh = true;
       var activeWindow = null;
       var cartographerOpen = true;
       var markers = {};
@@ -40,8 +64,10 @@
           zoom: 8,
           mapTypeId: google.maps.MapTypeId.ROADMAP
         };
-        var map = new google.maps.Map(document.getElementById("map-canvas"),
-            mapOptions);
+        var map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+
+        //var panoramioLayer = new google.maps.panoramio.PanoramioLayer();
+        //panoramioLayer.setMap(map);
 
         var marker_image = 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Wikipedia%27s_W.svg/17px-Wikipedia%27s_W.svg.png';
 
@@ -51,23 +77,14 @@
           var mapSW = bounds.getSouthWest();
 
           var seenTitles = [];
-//          _.each(_.keys(markers), function(marker) {
           _.each(markers, function(marker, name) {
             if (bounds.contains(marker.getPosition())) {
               seenTitles.push(name);
             } else {
               marker.setMap(null);
-              //markers[marker].setMap(null);
               delete markers[marker];
-              console.log("Deleted "+marker);
             }
           });
-//          console.log("Seen "+seenTitles.length+" titles:");
-//          console.dir(seenTitles);
-//                       function check_is_in_or_out(marker){
-//   return map.getBounds().contains(marker.getPosition());
-// }
-
 
           console.log("Bounds changed to: ");
           console.dir(mapNE.lat());
@@ -79,13 +96,32 @@
             _.each(data.points, function(point) {
               var myLatLng = new google.maps.LatLng(point.lat, point.lng);
 
+                // if point.image:
+                //en.wikipedia.org/w/api.php?action=query&titles=Image:Alaska Panhandle.png&prop=imageinfo&iiprop=url
+// $filename = replace($name, ' ', '_');
+// $digest = md5($filename);
+// $folder = $digest[0] . '/' . $digest[0] . $digest[1] . '/' .  urlencode($filename);
+// $url = 'http://upload.wikimedia.org/wikipedia/commons/' . $folder;
+
               var marker = new google.maps.Marker({position: myLatLng,
                                                    map: map,
                                                    icon: marker_image,
                                                    title: point.name});
+              var infocontent = '<a href="https://en.wikipedia.org/wiki/' + point.name + '" target=_blank><h1>' + point.name + '</h1>';
+
+              if (point.img) {
+                point.img = point.img.replace(/ /g, "_");
+                var imd5 = CryptoJS.MD5(point.img).toString();
+                var idir = '//upload.wikimedia.org/wikipedia/commons/thumb/' + imd5[0] + '/' + imd5[0] + imd5[1];
+                var iurl = idir + '/' + encodeURIComponent(point.img) + '/100px-' + encodeURIComponent(point.img);
+                infocontent += '<img id="infothumb" src="' + iurl + '" />';
+              }
+              infocontent += '</a><p>' +point.abstract + '</p>';
+
               var infowindow = new google.maps.InfoWindow({
-                content: '<a href="https://en.wikipedia.org/wiki/' + point.name + '"><h1>' + point.name + '</h1></a><p>' +point.abstract + '</p>'
+                content: infocontent
               });
+
               google.maps.event.addListener(marker, 'click', function() {
                 if (activeWindow) {
                   activeWindow.close();
@@ -110,22 +146,31 @@
                   success: plotMarkers});
         }
 
+        function toggleDrawer() {
+          if (cartographerOpen) {
+            $('#cartographer-root').animate({top: '-200px'});
+            $('#drawer-handle-text').text("︾");
+            $('#drawer-handle-text').text("︾");
+            $('#drawer-handle').css('line-height', '20px');
+            cartographerOpen = false;
+          } else {
+            $('#cartographer-root').animate({top: '0px'});
+            $('#drawer-handle-text').text("︽");
+            $('#drawer-handle').css('line-height', '10px');
+            cartographerOpen = true;
+          }
+        }
+
         Mousetrap.bind('esc', function() {
-          console.log("Escape!");
           if (activeWindow) {
             activeWindow.close();
             activeWindow = null;
           }
         });
-        Mousetrap.bind(['`', '~'], function() {
-          if (cartographerOpen) {
-            $('#cartographer-root').slideUp(150);
-            cartographerOpen = false;
-          } else {
-            $('#cartographer-root').slideDown(150);
-            cartographerOpen = true;
-          }
-        });
+        Mousetrap.bind(['`', '~'], toggleDrawer);
+        $("#drawer-handle").click(toggleDrawer);
+        $("#cartographer-root").draggable({axis: "y", containment: [0, -200, 0, 0]});
+
         google.maps.event.addListener(map, 'idle', updateMarkers);
       }
       google.maps.event.addDomListener(window, 'load', initialize);
@@ -138,8 +183,15 @@
         <div id="map-canvas"/>
       </div>
 
-      <div id="cartographer-root">
-        Cartographer - Social Mapping
+      <div id="cartographer-root" class="ui-draggable">
+        <div id="cartographer">
+          Cartographer - Social Mapping
+        </div>
+        <div id="drawer-handle" >
+          <span id="drawer-handle-text">
+            ︽
+          </span>
+        </div>
       </div>
     </div>
   </body>
