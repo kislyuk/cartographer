@@ -10,3 +10,5 @@ class POI(Document):
     name = StringField(required=True)
     at = PointField(required=True)
     abstract = BinaryField(required=True)
+    alen = IntField(required=True)
+    img = URLField()

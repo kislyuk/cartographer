@@ -61,6 +61,10 @@ def coord2latlng(line):
             raise Exception("No match")
 
 def extract_abstract(text):
+    img = None
+    img_match = re.match(r"\[\[Image:([^\|\]]+)", text)
+    if img_match:
+        img = img_match.group(1)
     for para in text.split('\n\n'):
         if all(re.match(r'^\s*$', line) or re.match(r'^(\[\[File|\[\[Image|\{\{)', line) for line in para.split('\n')):
             continue
@@ -73,8 +77,8 @@ def extract_abstract(text):
             elif template_depth == 0:
                 abstract += chunk
         abstract = re.sub(r"'''(.+?)'''", r"\1", abstract)
-        abstract = re.sub(r"\[\[([^\|]+?)\]\]", r"\1", abstract)
-        abstract = re.sub(r"\[\[.+?\|(.+?)\]\]", r"\1", abstract)
+        abstract = re.sub(r"\[\[([^\|]+?)\]\]", r'<a href="//en.wikipedia.org/wiki/\1">\1</a>', abstract)
+        abstract = re.sub(r"\[\[(.+?)\|(.+?)\]\]", r'<a href="//en.wikipedia.org/wiki/\1">\2</a>', abstract)
         abstract = abstract.strip()
         if re.match('^\s*$', abstract):
             continue
@@ -82,7 +86,7 @@ def extract_abstract(text):
             continue
         elif abstract.startswith('&lt;'):
             continue
-        return abstract
+        return abstract, img
 
 i, j = 0, 0
 with bz2.BZ2File(input_filename) as bz2_fh:
@@ -102,11 +106,12 @@ with bz2.BZ2File(input_filename) as bz2_fh:
                 lat, lng = normalize_coords(**old_coords)
                 j += 1
             if lat and lng:
-                abstract = extract_abstract(text) or ''
+                abstract, img = extract_abstract(text) or ''
                 #print("\t".join(map(str, (title, lat, lng))))
                 print(title)
+                print(abstract)
                 try:
-                    POI(name=title, at=[lng, lat], abstract=lz4.compress(abstract)).save()
+                    POI(name=title, at=[lng, lat], abstract=lz4.compress(abstract), alen=len(text), img=img).save()
                     #POI(name=title, at=[lng, lat], abstract=abstract).save()
                 except:
                     print("Insert error:", title, lat, lng, file=sys.stderr)
@@ -139,8 +144,8 @@ with bz2.BZ2File(input_filename) as bz2_fh:
             if text_end_match:
                 in_text = False
 
-#        if i+j>100:
-#            exit()
+        if i+j>100:
+            exit()
 
 sys.stderr.write(str(i+j)+" total coords processed\n")
 sys.stderr.write(str(j)+" in old format\n")
