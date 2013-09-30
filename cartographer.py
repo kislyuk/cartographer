@@ -12,6 +12,15 @@ panoramio layer
 check wp for color conventions/add colors
 scrape international wikipedias and add in-place translate
 
+assign to each article the min zoomlevel at which it will be returned
+
+after load:
+    for every article, query db and rebalance zoomlevels within radius
+
+
+find how to get better rank than alen (featured article status?)
+client side: aggregation box
+try to process region
 '''
 
 import os, sys, logging, urllib, time, string, json, argparse, collections, datetime, re
@@ -49,12 +58,12 @@ def create_cartographer(args):
 
     @app.route("/getPoints", methods=['POST'])
     def getPoints():
-
 #        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']),
 #                             name__nin=request.json['seen'])
 
         points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']))[:100]
-        seen = request.json['seen']
+        seen = request.json.get('seen', [])
+        zoom = int(request.json.get('zoom', 1))
         new_points = []
         discarded = 0
         for point in points:
@@ -64,6 +73,8 @@ def create_cartographer(args):
             new_points.append(point)
             if len(new_points) == 100:
                 break
+
+            print(point.name, point.rank)
 
         return jsonify({"points": [{"name": p.name,
                                     "lat": p.at['coordinates'][1],
