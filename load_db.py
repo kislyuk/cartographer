@@ -48,12 +48,12 @@ def normalize_coords(lat_d, long_d, lat_m=None, lat_s=None, lat_NS=None, long_m=
     return lat_d, long_d
 
 def coord2latlng(line):
-    match = re.match("{{coord\s*\|\s*(?:([\d\.\-]+)\s*\|\s*)(?:([\d\.\-]+)\s*\|\s*)?(?:([\d\.\-]+)\s*\|\s*)?(N|S)\s*\|\s*(?:([\d\.\-]+)\s*\|\s*)(?:([\d\.\-]+)\s*\|\s*)?(?:([\d\.\-]+)\s*\|\s*)?(E|W)", line)
+    match = re.match("{{(?:coord|coord\|display=title)\s*\|\s*(?:([\d\.\-]+)\s*\|\s*)(?:([\d\.\-]+)\s*\|\s*)?(?:([\d\.\-]+)\s*\|\s*)?(N|S)\s*\|\s*(?:([\d\.\-]+)\s*\|\s*)(?:([\d\.\-]+)\s*\|\s*)?(?:([\d\.\-]+)\s*\|\s*)?(E|W)", line)
     if match:
         lat_d, lat_m, lat_s, lat_h, lng_d, lng_m, lng_s, lng_h = match.groups()
         return normalize_coords(lat_d, lng_d, lat_m, lat_s, lat_h, lng_m, lng_s, lng_h)
     else:
-        match = re.match("{{coord\s*\|\s*([\d\.\-]+)\s*\|\s*([\d\.\-]+)", line)
+        match = re.match("{{(?:coord|coord\|display=title)\s*\|\s*([\d\.\-]+)\s*\|\s*([\d\.\-]+)", line)
         if match:
             lat_d, lng_d = match.groups()
             return float(lat_d), float(lng_d)
@@ -87,6 +87,7 @@ def extract_abstract(text):
         elif abstract.startswith('&lt;'):
             continue
         return abstract, img
+    return '', None
 
 i, j = 0, 0
 with bz2.BZ2File(input_filename) as bz2_fh:
@@ -112,8 +113,6 @@ with bz2.BZ2File(input_filename) as bz2_fh:
                 j += 1
             if lat and lng:
                 abstract, img = extract_abstract(text)
-                if not abstract:
-                    abstract, img = '', None
                 rank = len(text)
                 #print("\t".join(map(str, (title, lat, lng))))
                 print(title)
@@ -137,9 +136,8 @@ with bz2.BZ2File(input_filename) as bz2_fh:
                 i += 1
             except:
                 sys.stderr.write("No match: "+line)
-        old_coord_match = old_coord_re.match(line)
-        if old_coord_match:
-            datum, value = old_coord_match.groups()
+        for m in old_coord_re.finditer(line):
+            datum, value = m.groups()
             old_coords[datum] = value
         text_start_match = text_start_re.match(line)
         if text_start_match:

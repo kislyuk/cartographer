@@ -11,11 +11,11 @@ class POI(Document):
     at = PointField(required=True, auto_index=False)
     abstract = BinaryField(required=True)
     rank = IntField(required=True)
-    min_zoom = IntField(default=21)
+    min_zoom = IntField(default=0)
     img = StringField()
     meta = {
         'indexes': [
-            [("at", "2dsphere"), ("min_zoom", 1), ("rank": -1)],
+            [("at", "2dsphere"), ("min_zoom", 1), ("rank", -1)],
             # [("at", "2dsphere"), ("rank", 1)],
         ]
     }
