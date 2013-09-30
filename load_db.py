@@ -98,6 +98,11 @@ with bz2.BZ2File(input_filename) as bz2_fh:
     text_start_re = re.compile('^\s*<text xml:space="preserve">')
     text_end_re = re.compile("</text>\s*$")
 
+# PALO ALTO
+#|latd                            = 37 |latm = 25 |lats = 45 |latNS = N
+#|longd                           = 122 |longm = 8 |longs = 17 |longEW = W
+
+
     for line in bz2_fh:
         line = line.decode('utf-8')
         title_match = title_re.match(line)
@@ -107,10 +112,11 @@ with bz2.BZ2File(input_filename) as bz2_fh:
                 j += 1
             if lat and lng:
                 abstract, img = extract_abstract(text) or ''
+                rank = len(text)
                 #print("\t".join(map(str, (title, lat, lng))))
                 print(title)
                 try:
-                    POI(name=title, at=[lng, lat], abstract=lz4.compress(abstract), alen=len(text), img=img).save()
+                    POI(name=title, at=[lng, lat], abstract=lz4.compress(abstract), rank=rank, img=img).save()
                     #POI(name=title, at=[lng, lat], abstract=abstract).save()
                 except:
                     print("Insert error:", title, lat, lng, file=sys.stderr)

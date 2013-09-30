@@ -62,7 +62,9 @@
         var mapOptions = {
           center: new google.maps.LatLng(-34.397, 150.644),
           zoom: 8,
-          mapTypeId: google.maps.MapTypeId.ROADMAP
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          streetViewControl: true,
+          overviewMapControl: true
         };
         var map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
 
@@ -142,7 +144,7 @@
                   contentType : 'application/json',
                   data : JSON.stringify({NE: [mapNE.lng(), mapNE.lat()],
                                          SW: [mapSW.lng(), mapSW.lat()],
-                                         seen: seenTitles}),
+                                         seen: seenTitles, zoom: map.getZoom()}),
                   success: plotMarkers});
         }
 
