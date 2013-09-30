@@ -17,12 +17,10 @@ connect('carta')
 
 zoomspacing = [round(0.0001*(1.6**n), 4) for n in range(21, 1, -1)]
 
-i=0
-
 for lat in range(-90, 90, 2):
     for lng in range(-180, 180, 2):
         futures = []
-        print(lat, lng)
+        n_updated = 0
         points = list(POI.objects(at__geo_within_box=((lng, lat), (lng+2, lat+2))))
         for i, p1 in enumerate(points):
             for j, p2 in enumerate(points[i+1:]):
@@ -37,7 +35,9 @@ for lat in range(-90, 90, 2):
                 occluded_point.min_zoom = max(occluded_point.min_zoom, zoom)
                 #futures.append(saver.submit(occluded_point.save))
                 occluded_point.save()
+                n_updated += 1
         #wait(futures)
+        print(lat, lng, len(points), n_updated)
 
 #        docs_by_rank = sorted(POI.objects(at__geo_within_center=(doc.at['coordinates'], spacing)),
 #                              key=lambda point: point.rank or 0,
