@@ -106,14 +106,17 @@ with bz2.BZ2File(input_filename) as bz2_fh:
                 lat, lng = normalize_coords(**old_coords)
                 j += 1
             if lat and lng:
-                abstract, img = extract_abstract(text) or ''
+                abstract, img = extract_abstract(text)
+                if not abstract:
+                    abstract, img = '', None
                 #print("\t".join(map(str, (title, lat, lng))))
                 print(title)
                 try:
                     POI(name=title, at=[lng, lat], abstract=lz4.compress(abstract), alen=len(text), img=img).save()
                     #POI(name=title, at=[lng, lat], abstract=abstract).save()
-                except:
-                    print("Insert error:", title, lat, lng, file=sys.stderr)
+                except Exception as e:
+                    print("Insert error:", str(e), title, lat, lng, file=sys.stderr)
+#                    raise
 #                print("Begin abstract")
 #                print(abstract)
 #                print("End abstract")
@@ -143,8 +146,8 @@ with bz2.BZ2File(input_filename) as bz2_fh:
             if text_end_match:
                 in_text = False
 
-        if i+j>100:
-            exit()
+#        if i+j>100:
+#            exit()
 
 sys.stderr.write(str(i+j)+" total coords processed\n")
 sys.stderr.write(str(j)+" in old format\n")
