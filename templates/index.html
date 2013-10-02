@@ -47,7 +47,7 @@
       #infothumb {
         display: block;
         float: right;
-
+        margin: 2px;
       }
     </style>
     <script type="text/javascript"
@@ -55,6 +55,7 @@
     </script>
     <script type="text/javascript">
       var activeWindow = null;
+      var activeMarker = null;
       var cartographerOpen = true;
       var markers = {};
 
@@ -84,6 +85,9 @@
               seenTitles.push(name);
             } else {
               marker.setMap(null);
+              if (marker.infowindow) {
+                marker.infowindow.close();
+              }
               delete markers[marker];
             }
           });
@@ -123,6 +127,7 @@
               var infowindow = new google.maps.InfoWindow({
                 content: infocontent
               });
+              marker.infowindow = infowindow;
 
               google.maps.event.addListener(marker, 'click', function() {
                 if (activeWindow) {
@@ -131,12 +136,21 @@
 
                 infowindow.open(map, marker);
                 activeWindow = infowindow;
+                activeMarker = marker;
               });
 //              markers.push(marker);
               markers[point.name] = marker;
 //              console.dir(point);
             });
 //            console.dir(data)
+            var prevMarker;
+            _.each(markers, function(marker, name) {
+              if (prevMarker) {
+                marker.prev = prevMarker;
+                prevMarker.next = marker;
+              }
+              prevMarker = marker;
+            });
           }
 
           $.ajax('/getPoints',
@@ -162,6 +176,27 @@
             cartographerOpen = true;
           }
         }
+        function activate(marker) {
+          activeMarker = marker;
+          activeWindow = activeMarker.infowindow;
+          activeWindow.open(map, activeMarker);
+        }
+        function prevInfoWindow() {
+          if (activeWindow) {
+            activeWindow.close();
+            if (activeMarker.prev) {
+              activate(activeMarker.prev);
+            }
+          }
+        }
+        function nextInfoWindow() {
+          if (activeWindow) {
+            activeWindow.close();
+            if (activeMarker.next) {
+              activate(activeMarker.next);
+            }
+          }
+        }
 
         Mousetrap.bind('esc', function() {
           if (activeWindow) {
@@ -170,6 +205,8 @@
           }
         });
         Mousetrap.bind(['`', '~'], toggleDrawer);
+        Mousetrap.bind('j', nextInfoWindow);
+        Mousetrap.bind('k', prevInfoWindow);
         $("#drawer-handle").click(toggleDrawer);
         $("#cartographer-root").draggable({axis: "y", containment: [0, -200, 0, 0]});
 
