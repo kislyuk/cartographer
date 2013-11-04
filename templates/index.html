@@ -51,7 +51,7 @@
       }
     </style>
     <script type="text/javascript"
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD089xhNV3EkR5nv-GXTN0Mug87RWpe_iA&sensor=true">
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD089xhNV3EkR5nv-GXTN0Mug87RWpe_iA&sensor=true&libraries=panoramio">
     </script>
     <script type="text/javascript">
       var activeWindow = null;
@@ -64,15 +64,44 @@
           center: new google.maps.LatLng(-34.397, 150.644),
           zoom: 8,
           mapTypeId: google.maps.MapTypeId.ROADMAP,
+          mapTypeControl: true,
+          mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+            mapTypeIds: [google.maps.MapTypeId.HYBRID,
+                         google.maps.MapTypeId.ROADMAP,
+                         google.maps.MapTypeId.SATELLITE,
+                         google.maps.MapTypeId.TERRAIN]
+          },
+
           streetViewControl: true,
           overviewMapControl: true
         };
         var map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
 
-        //var panoramioLayer = new google.maps.panoramio.PanoramioLayer();
-        //panoramioLayer.setMap(map);
+        var panoramioLayer = new google.maps.panoramio.PanoramioLayer();
+
+        var panoramioToggle = document.createElement('div');
+        panoramioToggle.style.padding = '5px';
+        var controlUI = document.createElement('div');
+        controlUI.style.backgroundColor = 'white';
+        controlUI.style.borderStyle = 'solid';
+        controlUI.style.borderWidth = '2px';
+        controlUI.style.cursor = 'pointer';
+        controlUI.style.textAlign = 'center';
+        controlUI.title = 'Click to set the map to Home';
+        panoramioToggle.appendChild(controlUI);
+        // Set CSS for the control interior.
+        var controlText = document.createElement('div');
+        controlText.style.fontFamily = 'Arial,sans-serif';
+        controlText.style.fontSize = '12px';
+        controlText.style.paddingLeft = '4px';
+        controlText.style.paddingRight = '4px';
+        controlText.innerHTML = '<strong>Toggle Panoramio</strong>';
+        controlUI.appendChild(controlText);
+        map.controls[google.maps.ControlPosition.LEFT_TOP].push(panoramioToggle);
 
         var marker_image = 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Wikipedia%27s_W.svg/17px-Wikipedia%27s_W.svg.png';
+        //marker_image = '/static/wikipedia.svg';
 
         function updateMarkers() {
           var bounds = map.getBounds();
@@ -211,9 +240,16 @@
         $("#cartographer-root").draggable({axis: "y", containment: [0, -200, 0, 0]});
 
         google.maps.event.addListener(map, 'idle', updateMarkers);
+        google.maps.event.addDomListener(panoramioToggle, 'click', function() {
+          if (panoramioLayer.getMap()) {
+            panoramioLayer.setMap(null);
+          } else {
+            panoramioLayer.setMap(map);
+          }
+        });
+
       }
       google.maps.event.addDomListener(window, 'load', initialize);
-
     </script>
   </head>
   <body>
