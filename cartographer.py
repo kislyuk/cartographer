@@ -34,6 +34,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "lib", "python"))
 from carta import (logger, POI)
+from carta.packages import ensure
 
 from mongoengine import *
 
@@ -58,30 +59,18 @@ def create_cartographer(args):
 
     @app.route("/getPoints", methods=['POST'])
     def getPoints():
-#        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']),
-#                             name__nin=request.json['seen'])
-
-        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']))[:100]
-        seen = request.json.get('seen', [])
         zoom = int(request.json.get('zoom', 1))
-        new_points = []
-        discarded = 0
-        for point in points:
-            if point.name in seen:
-                discarded += 1
-                continue
-            new_points.append(point)
-            if len(new_points) == 100:
-                break
-
-            print(point.name, point.rank)
+        seen = request.json.get('seen', [])
+        points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']),
+                             min_zoom=zoom,
+                             name__nin=request.json['seen'])
 
         return jsonify({"points": [{"name": p.name,
                                     "lat": p.at['coordinates'][1],
                                     "lng": p.at['coordinates'][0],
                                     "abstract": lz4.decompress(p.abstract).decode() if p.abstract else '',
                                     "img": p.img,
-                                    } for p in new_points]})
+                                    } for p in points]})
 
     return app
 
