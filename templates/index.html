@@ -115,7 +115,7 @@
 
           var seenTitles = [];
           _.each(markers, function(marker, name) {
-            if (bounds.contains(marker.getPosition())) {
+            if (bounds.contains(marker.getPosition()) && _.isString(name)) {
               seenTitles.push(name);
             } else {
               marker.setMap(null);
@@ -173,7 +173,7 @@
                   toggleDrawer();
                 }
 
-                window.history.pushState(marker.title, marker.title, "/#"+marker.title);
+                window.history.pushState(marker.title, marker.title, "/?location="+marker.title);
 
                 infowindow.open(map, marker);
                 activeWindow = infowindow;
@@ -279,6 +279,7 @@
 
         // Create the search box and link it to the UI element.
         var input = document.getElementById('searchbox');
+        input.style.width = '400px';
         var searchBox = new google.maps.places.SearchBox(input);
 
         // Listen for the event fired when the user selects an item from the
