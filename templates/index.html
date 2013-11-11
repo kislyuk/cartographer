@@ -58,6 +58,7 @@
       var activeMarker = null;
       var cartographerOpen = true;
       var markers = {};
+      var disqus_shortname = 'cartographer217';
 
       function initialize() {
         var mapOptions = {
@@ -83,22 +84,21 @@
         var panoramioToggle = document.createElement('div');
         panoramioToggle.style.padding = '5px';
         var controlUI = document.createElement('div');
-        controlUI.style.backgroundColor = 'white';
         controlUI.style.borderStyle = 'solid';
+        controlUI.style.borderColor = 'grey';
+        controlUI.style.padding = '0px';
+        controlUI.style.borderRadius = '2px';
+        controlUI.style.backgroundClip = 'padding-box';
         controlUI.style.borderWidth = '2px';
+        controlUI.style.boxShadow = 'rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px';
         controlUI.style.cursor = 'pointer';
         controlUI.style.textAlign = 'center';
-        controlUI.title = 'Click to set the map to Home';
+        controlUI.title = 'Click to toggle the Panoramio layer';
         panoramioToggle.appendChild(controlUI);
-        // Set CSS for the control interior.
-        var controlText = document.createElement('div');
-        controlText.style.fontFamily = 'Arial,sans-serif';
-        controlText.style.fontSize = '12px';
-        controlText.style.paddingLeft = '4px';
-        controlText.style.paddingRight = '4px';
-        controlText.innerHTML = '<strong>Toggle Panoramio</strong>';
-        controlUI.appendChild(controlText);
-        map.controls[google.maps.ControlPosition.LEFT_TOP].push(panoramioToggle);
+        var panoramioCtlImg = document.createElement('img');
+        panoramioCtlImg.src = "http://upload.wikimedia.org/wikipedia/commons/thumb/d/da/SF_From_Marin_Highlands3.jpg/80px-SF_From_Marin_Highlands3.jpg";
+        controlUI.appendChild(panoramioCtlImg);
+        map.controls[google.maps.ControlPosition.RIGHT_TOP].push(panoramioToggle);
 
         var marker_image = 'http://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Wikipedia%27s_W.svg/17px-Wikipedia%27s_W.svg.png';
         //marker_image = '/static/wikipedia.svg';
@@ -117,7 +117,7 @@
               if (marker.infowindow) {
                 marker.infowindow.close();
               }
-              delete markers[marker];
+              delete markers[name];
             }
           });
 
@@ -153,6 +153,8 @@
               }
               infocontent += '</a><p>' +point.abstract + '</p>';
 
+              infocontent += '<div id="disqus_thread"></div>';
+
               var infowindow = new google.maps.InfoWindow({
                 content: infocontent
               });
@@ -163,9 +165,20 @@
                   activeWindow.close();
                 }
 
+                window.history.pushState(marker.title, marker.title, "/"+marker.title);
+
                 infowindow.open(map, marker);
                 activeWindow = infowindow;
                 activeMarker = marker;
+
+
+                // disqus ignition
+                (function() {
+                    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                })();
+
               });
 //              markers.push(marker);
               markers[point.name] = marker;
@@ -250,6 +263,7 @@
 
       }
       google.maps.event.addDomListener(window, 'load', initialize);
+
     </script>
   </head>
   <body>

@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "lib", "python"))
 from carta import (logger, POI)
-from carta.packages import ensure
+from carta.packages.ensure import ensure
 
 from mongoengine import *
 
@@ -59,8 +59,10 @@ def create_cartographer(args):
 
     @app.route("/getPoints", methods=['POST'])
     def getPoints():
+        print(request.json)
         zoom = int(request.json.get('zoom', 1))
         seen = request.json.get('seen', [])
+        ensure(seen).is_a_list_of(str)
         points = POI.objects(at__geo_within_box=(request.json['SW'], request.json['NE']),
                              min_zoom=zoom,
                              name__nin=request.json['seen'])
