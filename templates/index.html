@@ -49,9 +49,21 @@
         float: right;
         margin: 2px;
       }
+      #panoramio-control {
+        border-style: solid;
+        border-color: grey;
+        padding: 0px;
+        border-radius: 2px;
+        background-clip: padding-box;
+        border-width: 2px;
+        box-shadow: rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px;
+        cursor: pointer;
+        text-align: center;
+        opacity: 0.6;
+      }
     </style>
     <script type="text/javascript"
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD089xhNV3EkR5nv-GXTN0Mug87RWpe_iA&sensor=true&libraries=panoramio">
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD089xhNV3EkR5nv-GXTN0Mug87RWpe_iA&sensor=true&libraries=panoramio,places">
     </script>
     <script type="text/javascript">
       var activeWindow = null;
@@ -84,19 +96,12 @@
         var panoramioToggle = document.createElement('div');
         panoramioToggle.style.padding = '5px';
         var controlUI = document.createElement('div');
-        controlUI.style.borderStyle = 'solid';
-        controlUI.style.borderColor = 'grey';
-        controlUI.style.padding = '0px';
-        controlUI.style.borderRadius = '2px';
-        controlUI.style.backgroundClip = 'padding-box';
-        controlUI.style.borderWidth = '2px';
-        controlUI.style.boxShadow = 'rgba(0, 0, 0, 0.298039) 0px 1px 4px -1px';
-        controlUI.style.cursor = 'pointer';
-        controlUI.style.textAlign = 'center';
+        controlUI.id = 'panoramio-control';
         controlUI.title = 'Click to toggle the Panoramio layer';
         panoramioToggle.appendChild(controlUI);
         var panoramioCtlImg = document.createElement('img');
         panoramioCtlImg.src = "http://upload.wikimedia.org/wikipedia/commons/thumb/d/da/SF_From_Marin_Highlands3.jpg/80px-SF_From_Marin_Highlands3.jpg";
+        panoramioCtlImg.style.marginBottom = '-3px';
         controlUI.appendChild(panoramioCtlImg);
         map.controls[google.maps.ControlPosition.RIGHT_TOP].push(panoramioToggle);
 
@@ -164,13 +169,15 @@
                 if (activeWindow) {
                   activeWindow.close();
                 }
+                if (cartographerOpen) {
+                  toggleDrawer();
+                }
 
-                window.history.pushState(marker.title, marker.title, "/"+marker.title);
+                window.history.pushState(marker.title, marker.title, "/#"+marker.title);
 
                 infowindow.open(map, marker);
                 activeWindow = infowindow;
                 activeMarker = marker;
-
 
                 // disqus ignition
                 (function() {
@@ -219,6 +226,9 @@
           }
         }
         function activate(marker) {
+          if (cartographerOpen) {
+            toggleDrawer();
+          }
           activeMarker = marker;
           activeWindow = activeMarker.infowindow;
           activeWindow.open(map, activeMarker);
@@ -256,9 +266,63 @@
         google.maps.event.addDomListener(panoramioToggle, 'click', function() {
           if (panoramioLayer.getMap()) {
             panoramioLayer.setMap(null);
+
+            controlUI.style.opacity = 0.6;
+            controlUI.style.borderColor = 'grey';
+
           } else {
             panoramioLayer.setMap(map);
+            controlUI.style.opacity = 1;
+            controlUI.style.borderColor = 'steelblue';
           }
+        });
+
+        // Create the search box and link it to the UI element.
+        var input = document.getElementById('searchbox');
+        var searchBox = new google.maps.places.SearchBox(input);
+
+        // Listen for the event fired when the user selects an item from the
+        // pick list. Retrieve the matching places for that item.
+        google.maps.event.addListener(searchBox, 'places_changed', function() {
+          var places = searchBox.getPlaces();
+
+          for (var i = 0, marker; marker = markers[i]; i++) {
+            marker.setMap(null);
+          }
+
+          // For each place, get the icon, place name, and location.
+          markers = [];
+          var bounds = new google.maps.LatLngBounds();
+          for (var i = 0, place; place = places[i]; i++) {
+            var image = {
+              url: place.icon,
+              size: new google.maps.Size(71, 71),
+              origin: new google.maps.Point(0, 0),
+              anchor: new google.maps.Point(17, 34),
+              scaledSize: new google.maps.Size(25, 25)
+            };
+
+            // Create a marker for each place.
+            var marker = new google.maps.Marker({
+              map: map,
+              icon: image,
+              title: place.name,
+              position: place.geometry.location
+            });
+
+            markers.push(marker);
+
+            bounds.extend(place.geometry.location);
+          }
+
+          map.fitBounds(bounds);
+        });
+
+        // Bias the SearchBox results towards places that are within the bounds of the
+        // current map's viewport.
+        google.maps.event.addListener(map, 'bounds_changed', function() {
+          var bounds = map.getBounds();
+          searchBox.setBounds(bounds);
         });
 
       }
@@ -275,6 +339,8 @@
       <div id="cartographer-root" class="ui-draggable">
         <div id="cartographer">
           Cartographer - Social Mapping
+          <input id="searchbox" type="text" placeholder="Search">
+
         </div>
         <div id="drawer-handle" >
           <span id="drawer-handle-text">
